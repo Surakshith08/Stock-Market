@@ -3,4 +3,12 @@ pandas
 numpy
 yfinance
 scikit-learn
-joblib
+matplotlib
+seaborn
+statsmodels
+tensorflow
+nltk
+transformers
+torch
+wordcloud
+pygooglenews

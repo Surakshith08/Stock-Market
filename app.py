@@ -10,15 +10,25 @@ st.write("This app analyzes global indices and predicts Nifty open direction.")
 # Download latest data
 nse = yf.download("^NSEI", period="1y")
 dji = yf.download("^DJI", period="1y")
-
+if nse.empty or dji.empty:
+    st.error("Market data could not be loaded from Yahoo Finance.")
+    st.stop()
 # returns
 nse["Return"] = nse["Close"].pct_change()
 dji["Return"] = dji["Close"].pct_change()
 
+
 df = pd.DataFrame({
     "NSE_Return": nse["Return"],
     "DJI_Return": dji["Return"]
-}).dropna()
+})
+
+df = df.dropna()
+
+# Prevent empty dataset error
+if df.shape[0] == 0:
+    st.error("No data available to train the model.")
+    st.stop()
 
 # target
 df["Target"] = (df["NSE_Return"] > 0).astype(int)
@@ -29,7 +39,7 @@ y = df["Target"]
 model = LogisticRegression()
 model.fit(X, y)
 
-latest = [[df["DJI_Return"].iloc[-1]]]
+latest = [[df["DJI_Return"].dropna().iloc[-1]]]
 
 prediction = model.predict(latest)
 

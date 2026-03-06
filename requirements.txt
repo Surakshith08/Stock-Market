@@ -6,9 +6,9 @@ scikit-learn
 matplotlib
 seaborn
 statsmodels
-tensorflow
 nltk
 transformers
 torch
 wordcloud
 pygooglenews
+

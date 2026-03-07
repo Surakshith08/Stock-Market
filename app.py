@@ -5,7 +5,6 @@ import base64
 import io
 import pandas as pd
 import numpy as np
-import scipy.stats as stats
 
 from dash import Dash, dcc, html, Input, Output, State, dash_table
 import dash_bootstrap_components as dbc
@@ -13,11 +12,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
-from sklearn.metrics import roc_curve, auc, confusion_matrix
+from sklearn.metrics import roc_curve, auc
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -26,16 +25,13 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
-
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 
-# ====================================
+# ==============================
 # DASH APP INITIALIZATION
-# ====================================
+# ==============================
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
@@ -43,9 +39,9 @@ server = app.server
 MASTER_DF = None
 
 
-# ====================================
+# ==============================
 # PAGE 1 – DATA UPLOAD
-# ====================================
+# ==============================
 
 def page1_layout():
 
@@ -75,9 +71,9 @@ def page1_layout():
     ])
 
 
-# ====================================
+# ==============================
 # PAGE 2 – EDA
-# ====================================
+# ==============================
 
 def page2_layout():
 
@@ -85,18 +81,25 @@ def page2_layout():
 
         html.H2("Exploratory Data Analysis"),
 
-        dcc.Dropdown(id="corr-cols", multi=True),
+        dcc.Dropdown(
+            id="corr-cols",
+            multi=True,
+            placeholder="Select columns for correlation"
+        ),
 
         dbc.Button("Generate Heatmap", id="corr-btn"),
+
+        html.Br(),
+        html.Br(),
 
         html.Div(id="corr-out")
 
     ])
 
 
-# ====================================
+# ==============================
 # PAGE 3 – ML MODELS
-# ====================================
+# ==============================
 
 def page3_layout():
 
@@ -112,21 +115,24 @@ def page3_layout():
                 {"label": "Random Forest", "value": "rf"},
                 {"label": "SVM", "value": "svm"},
                 {"label": "Naive Bayes", "value": "nb"},
-                {"label": "KNN", "value": "knn"},
-                {"label": "LSTM", "value": "lstm"}
-            ]
+                {"label": "KNN", "value": "knn"}
+            ],
+            placeholder="Select ML model"
         ),
 
         dbc.Button("Train Model", id="train-btn"),
+
+        html.Br(),
+        html.Br(),
 
         html.Div(id="model-output")
 
     ])
 
 
-# ====================================
+# ==============================
 # PAGE 4 – SENTIMENT ANALYSIS
-# ====================================
+# ==============================
 
 def page4_layout():
 
@@ -145,14 +151,16 @@ def page4_layout():
             }
         ),
 
+        html.Br(),
+
         html.Div(id="sentiment-output")
 
     ])
 
 
-# ====================================
+# ==============================
 # MAIN LAYOUT
-# ====================================
+# ==============================
 
 app.layout = dbc.Container([
 
@@ -176,9 +184,9 @@ app.layout = dbc.Container([
 ])
 
 
-# ====================================
+# ==============================
 # TAB ROUTING
-# ====================================
+# ==============================
 
 @app.callback(
     Output("tab-content", "children"),
@@ -199,9 +207,9 @@ def render_tab(tab):
         return page4_layout()
 
 
-# ====================================
+# ==============================
 # DATA UPLOAD CALLBACK
-# ====================================
+# ==============================
 
 @app.callback(
     [Output("upload-status", "children"),
@@ -225,7 +233,7 @@ def load_data(contents, filename):
     MASTER_DF = df.copy()
 
     status = dbc.Alert(
-        f"{filename} loaded successfully | Rows {df.shape[0]}",
+        f"{filename} loaded successfully | Rows: {df.shape[0]}",
         color="success"
     )
 
@@ -237,9 +245,9 @@ def load_data(contents, filename):
     return status, preview
 
 
-# ====================================
+# ==============================
 # CORRELATION HEATMAP
-# ====================================
+# ==============================
 
 @app.callback(
     Output("corr-out", "children"),
@@ -257,60 +265,9 @@ def corr(_, cols):
     return dcc.Graph(figure=fig)
 
 
-# ====================================
-# LSTM MODEL FUNCTION
-# ====================================
-
-def run_lstm(df):
-
-    target = df.select_dtypes(include=np.number).iloc[:,0]
-
-    data = target.dropna()
-
-    scaler = MinMaxScaler()
-
-    scaled = scaler.fit_transform(data.values.reshape(-1,1))
-
-    seq = 60
-
-    X = []
-    y = []
-
-    for i in range(seq, len(scaled)):
-
-        X.append(scaled[i-seq:i])
-        y.append(scaled[i])
-
-    X = np.array(X)
-    y = np.array(y)
-
-    split = int(0.8 * len(X))
-
-    X_train = X[:split]
-    X_test = X[split:]
-
-    y_train = y[:split]
-    y_test = y[split:]
-
-    model = Sequential([
-        LSTM(64, return_sequences=True, input_shape=(seq,1)),
-        Dropout(0.2),
-        LSTM(32),
-        Dense(1)
-    ])
-
-    model.compile(optimizer="adam", loss="mse")
-
-    model.fit(X_train, y_train, epochs=5, batch_size=32)
-
-    preds = model.predict(X_test)
-
-    return preds[:10]
-
-
-# ====================================
+# ==============================
 # TRAIN MODEL
-# ====================================
+# ==============================
 
 @app.callback(
     Output("model-output", "children"),
@@ -325,14 +282,7 @@ def train_model(_, model_name):
 
     df = MASTER_DF.dropna()
 
-    if model_name == "lstm":
-
-        preds = run_lstm(df)
-
-        return f"LSTM Prediction sample: {preds[:5]}"
-
     X = df.drop("Nifty_Open_Dir", axis=1)
-
     y = df["Nifty_Open_Dir"]
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -370,14 +320,14 @@ def train_model(_, model_name):
 
     fig.add_trace(go.Scatter(x=fpr, y=tpr))
 
-    fig.update_layout(title=f"ROC Curve AUC = {roc_auc:.3f}")
+    fig.update_layout(title=f"ROC Curve | AUC = {roc_auc:.3f}")
 
     return dcc.Graph(figure=fig)
 
 
-# ====================================
+# ==============================
 # SENTIMENT ANALYSIS
-# ====================================
+# ==============================
 
 @app.callback(
     Output("sentiment-output", "children"),
@@ -411,9 +361,9 @@ def sentiment(contents):
     return html.Img(src="data:image/png;base64," + img)
 
 
-# ====================================
+# ==============================
 # RUN SERVER
-# ====================================
+# ==============================
 
 if __name__ == "__main__":
 

@@ -16,6 +16,6 @@ dash-bootstrap-components
 scipy
 plotly
 wordcloud
-vaderSentiment
-gunicorn
+tensorflow
+
 

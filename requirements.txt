@@ -12,3 +12,4 @@ pygooglenews>=0.1
 wordcloud>=1.9
 scipy>=1.10
 streamlit>=1.30
+pygooglenews

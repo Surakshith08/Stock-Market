@@ -11,4 +11,11 @@ transformers
 torch
 wordcloud
 pygooglenews
+dash
+dash-bootstrap-components
+scipy
+plotly
+wordcloud
+vaderSentiment
+gunicorn
 

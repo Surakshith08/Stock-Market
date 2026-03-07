@@ -330,7 +330,7 @@ model = smf.logit('Nifty_Open_Dir ~ NSE_Return +  DJI_Return + IXIC_Return + GDA
 print(model.summary())
 
 import pandas as pd
-# Define the test period
+# Define the test peri
 test_start_date = '2025-06-01'
 test_end_date = '2026-01-01'
 
@@ -886,7 +886,6 @@ print(f"AUC for KNN test data: {roc_auc_knn:.4f}")
 
 """**PHASE 5 - Sentiment Analysis**"""
 
-!pip install pygooglenews
 
 import pandas as pd
 import nltk

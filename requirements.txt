@@ -16,6 +16,7 @@ dash-bootstrap-components
 scipy
 plotly
 wordcloud
-tensorflow
+
+
 
 
